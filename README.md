@@ -2,7 +2,9 @@
 
 FinSight AI is a Python-based financial analytics dashboard that explores household transaction data, visualizes spending patterns, identifies potentially unusual expenses, and generates experimental monthly expense forecasts.
 
-## Demo link - [text](https://finsight-ai-yamuna.streamlit.app/)
+## Live Demo
+
+[Open FinSight AI](https://finsight-ai-yamuna.streamlit.app/)
 
 ## Dashboard Preview
 
@@ -38,6 +40,7 @@ FinSight AI is a Python-based financial analytics dashboard that explores househ
 
 ## Project Structure
 
+```text
 FinSight-AI/
 ├── dashboard/
 │   └── app.py
@@ -51,11 +54,13 @@ FinSight-AI/
 ├── tests/
 │   └── test_pipeline_outputs.py
 ├── data/
-│   ├── raw/                 # Local dataset; not committed
-│   └── processed/           # Generated outputs; not committed
+│   ├── raw/          # Local dataset; not committed
+│   └── processed/   # Generated outputs; not committed
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+```
+
 
 ## Run Locally
 
