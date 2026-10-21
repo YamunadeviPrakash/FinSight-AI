@@ -275,18 +275,28 @@ with st.sidebar:
 )
     st.divider()
 
+    
     page = st.radio(
         "NAVIGATION",
-        ["Dashboard", "Transactions", "Analytics", "Trends", "Insights"],
+        [
+            "Dashboard",
+           "Transactions",
+            "Analytics",
+            "Trends",
+            "Insights",
+           "Spending Forecast",
+        ],
         label_visibility="collapsed",
         format_func=lambda x: {
             "Dashboard": "⌂   Dashboard",
-            "Transactions": "▤   Transactions",
-            "Analytics": "◔   Analytics",
-            "Trends": "↗   Spending Trends",
-            "Insights": "✧   AI Insights",
-        }[x]
+            "Transactions": "⇄   Transactions",
+            "Analytics": "▥   Analytics",
+            "Trends": "↗   Trends",
+            "Insights": "✧   Insights",
+            "Spending Forecast": "◷   Spending Forecast",
+        }[x],
     )
+
 
     st.divider()
     st.markdown("**DATA FILTERS**")
@@ -771,3 +781,175 @@ elif page == "Insights":
         "contamination setting controls the expected fraction of "
         "outliers; it does not measure real-world fraud accuracy."
     )
+
+elif page == "Spending Forecast":
+    from pathlib import Path
+
+    import pandas as pd
+    import plotly.graph_objects as go
+
+    project_root = Path(__file__).resolve().parent.parent
+    forecast_path = (
+        project_root / "data" / "processed" / "spending_forecast.csv"
+    )
+    cleaned_path = (
+        project_root / "data" / "processed" / "cleaned_transactions.csv"
+    )
+
+    st.title("Spending Forecast")
+    st.caption("Historical household expense analysis")
+
+    if not forecast_path.exists() or not cleaned_path.exists():
+        st.warning(
+            "Forecast files are missing. Run "
+            "`python src/spending_forecast.py` first."
+        )
+    else:
+        forecast_df = pd.read_csv(forecast_path)
+        transactions = pd.read_csv(cleaned_path)
+
+        transactions["Date"] = pd.to_datetime(
+            transactions["Date"], errors="coerce"
+        )
+        transactions["Amount"] = pd.to_numeric(
+            transactions["Amount"], errors="coerce"
+        )
+
+        expenses = transactions[
+            transactions["Income/Expense"]
+            .astype(str).str.strip().str.lower() == "expense"
+        ].dropna(subset=["Date", "Amount"])
+
+        monthly_actual = (
+            expenses.set_index("Date")["Amount"]
+            .resample("MS")
+            .sum()
+            .asfreq("MS", fill_value=0)
+        )
+
+        forecast_df["Month"] = pd.to_datetime(
+            forecast_df["Month"], errors="coerce"
+        )
+        forecast_df["Forecast_Expense"] = pd.to_numeric(
+            forecast_df["Forecast_Expense"], errors="coerce"
+        )
+        forecast_df = forecast_df.dropna(
+            subset=["Month", "Forecast_Expense"]
+        )
+
+        if forecast_df.empty or monthly_actual.empty:
+            st.warning("There is not enough valid data to display forecasts.")
+        else:
+            st.info(
+                "This dataset ends in September 2018. "
+                "The forecasts below are historical-period estimates, "
+                "not predictions for the current year."
+            )
+
+            
+            col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+            "Average monthly expense",
+            f"₹{monthly_actual.mean():,.2f}",
+        )
+
+        with col2:
+            st.metric(
+            "Forecast periods",
+            len(forecast_df),
+        )
+
+        with col3:
+            st.metric(
+                "Seasonal model MAE",
+                "₹20,635.15",
+                help=(
+                "Mean Absolute Error measured on 12 historical test months. "
+                "This does not guarantee future accuracy."
+            ),
+        )
+
+
+        st.subheader("Historical Expenses and Forecasts")
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=monthly_actual.index,
+                y=monthly_actual.values,
+                mode="lines+markers",
+                name="Historical expenses",
+                line=dict(width=2),
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=forecast_df["Month"],
+                y=forecast_df["Forecast_Expense"],
+                mode="lines+markers",
+                name="Seasonal-naive forecast",
+                line=dict(width=3, dash="dash"),
+            )
+        )
+            # Mark where historical data ends and forecasting begins
+        forecast_start = forecast_df["Month"].min()
+
+        fig.add_vline(
+            x=forecast_start.timestamp() * 1000,
+            line_dash="dot",
+            line_width=2,
+            annotation_text="Forecast begins",
+            annotation_position="top",
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            xaxis_title="Month",
+            yaxis_title="Expenses (₹)",
+            legend_title="Series",
+            margin=dict(l=10, r=10, t=30, b=10),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.subheader("Forecast Estimates")
+
+        display_forecast = forecast_df.copy()
+        display_forecast["Month"] = (
+            display_forecast["Month"].dt.strftime("%B %Y")
+        )
+        display_forecast["Forecast_Expense"] = (
+            display_forecast["Forecast_Expense"]
+            .map(lambda amount: f"₹{amount:,.2f}")
+        )
+
+        st.dataframe(
+            display_forecast.rename(
+                columns={
+                    "Month": "Forecast month",
+                    "Forecast_Expense": "Estimated expenses",
+                    "Forecast_Method": "Method",
+                }
+            ),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        st.subheader("How the Forecast Works")
+        st.write(
+            "The seasonal-naive method estimates each month using "
+            "the actual expense total from the same calendar month "
+            "in the previous year."
+        )
+
+        st.caption(
+            "Validation on 12 historical months: seasonal-naive "
+            "MAE ₹20,635.15; previous-month baseline MAE ₹32,598.09. "
+            "These are historical evaluation results, not a guarantee "
+            "of future accuracy."
+        )
+
