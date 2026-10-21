@@ -24,8 +24,7 @@ FinSight AI is a Python-based financial analytics dashboard that explores househ
 
 ## Project Structure
 
-```text
-AI-Financial-Intelligence/
+FinSight-AI/
 ├── dashboard/
 │   └── app.py
 ├── src/
@@ -35,13 +34,14 @@ AI-Financial-Intelligence/
 │   ├── anomaly_detection.py
 │   ├── spending_forecast.py
 │   └── validate_forecast.py
+├── tests/
+│   └── test_pipeline_outputs.py
 ├── data/
-│   ├── raw/
-│   └── processed/
+│   ├── raw/                 # Local dataset; not committed
+│   └── processed/           # Generated outputs; not committed
 ├── requirements.txt
 ├── .gitignore
 └── README.md
-```
 
 ## Run Locally
 
@@ -78,6 +78,7 @@ AI-Financial-Intelligence/
    streamlit run dashboard/app.py
    ```
 
+
 ## Forecasting Evaluation
 
 The seasonal-naive method estimates a month's expenses using the same calendar month from the previous year. In the current historical evaluation, it achieved a Mean Absolute Error of ₹20,635.15 across 12 test months, compared with ₹32,598.09 for the previous-month baseline.
@@ -96,3 +97,22 @@ The forecasting outputs represent historical-period estimates based on this data
 - Improve model validation and explainability.
 - Add more configurable spending insights.
 - Deploy the dashboard for public demonstration.
+
+## Testing
+
+FinSight AI includes automated tests to verify that the data pipeline generates valid outputs and that the processed datasets contain the expected columns and values.
+
+Activate your virtual environment, then run the following command from the project root:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+The tests check:
+- Whether the cleaned transaction dataset exists.
+- Whether anomaly detection results are generated.
+- Whether spending forecasts contain the expected number of rows, required columns, and valid non-negative values.
+
+A successful run should report that all three tests pass.
+
+**Note:** These tests use locally generated files in `data/processed/`. Run the data-processing scripts first if those files are missing.

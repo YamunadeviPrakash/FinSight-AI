@@ -7,6 +7,7 @@ from sklearn.metrics import mean_absolute_error
 ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / "data" / "processed" / "cleaned_transactions.csv"
 OUTPUT_PATH = ROOT / "data" / "processed" / "spending_forecast.csv"
+METRICS_PATH = ROOT / "data" / "processed" / "forecast_metrics.csv"
 
 
 def load_monthly_expenses():
@@ -73,6 +74,21 @@ def main():
     previous_mae = mean_absolute_error(
         evaluation["Actual"], evaluation["Previous_Month"]
     )
+    metrics = pd.DataFrame([
+        {
+            "Model": "Seasonal naive",
+            "MAE": seasonal_mae,
+            "Evaluation_Months": len(evaluation),
+        },
+        {
+            "Model": "Previous month",
+            "MAE": previous_mae,
+            "Evaluation_Months": len(evaluation),
+        },
+    ])
+
+    METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    metrics.to_csv(METRICS_PATH, index=False)
 
     print("\nFINSIGHT AI — SEASONAL FORECAST")
     print("=" * 45)
