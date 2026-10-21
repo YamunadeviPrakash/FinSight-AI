@@ -1,0 +1,4 @@
+Month,Forecast_Expense,Forecast_Method
+2018-10,45532.09,Seasonal naive
+2018-11,64364.0,Seasonal naive
+2018-12,46805.0,Seasonal naive
